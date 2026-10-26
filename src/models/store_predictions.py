@@ -63,7 +63,9 @@ def main():
     preds = build_predictions(df, model_ids)
 
     with engine.begin() as conn:
-        conn.exec_driver_sql("DELETE FROM predictions")
+        conn.exec_driver_sql(
+            "DELETE FROM predictions WHERE signal_id IN "
+            "(SELECT signal_id FROM signals WHERE kind = 'labeled')")
         preds.to_sql("predictions", conn, if_exists="append", index=False,
                      method="multi", chunksize=1000)
     print(f"\nStored {len(preds)} predictions "
