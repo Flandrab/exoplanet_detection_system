@@ -63,7 +63,7 @@ st.markdown(
     "- **Light curve explorer**: the light curve, the folded transit and the "
     "predictions of every model for one signal.\n"
     "- **Model comparison**: metrics, ROC and precision-recall curves and "
-    "confusion matrices of the six models."
+    "confusion matrices of the seven models (three classical models on two feature sets, plus a 1D CNN)."
 )
 st.caption(
     "Labeled signals have a known disposition from the TOI catalog. Their probabilities "
