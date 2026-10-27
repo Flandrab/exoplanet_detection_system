@@ -13,13 +13,6 @@ def get(path):
     return requests.get(BASE + path, timeout=120)
 
 
-def get_json(path):
-    r = get(path)
-    if r.status_code != 200:
-        raise RuntimeError(f"HTTP {r.status_code} for {path}: {r.text[:200]}")
-    return r.json()
-
-
 def check(name, fn):
     try:
         ok, detail = fn()
@@ -30,47 +23,50 @@ def check(name, fn):
 
 
 def t_health():
-    status = get_json("/api/health").get("status")
+    status = get("/api/health").json().get("status")
     return status == "ok", f"status={status}"
 
 
 def t_summary():
-    c = get_json("/api/summary")["counts"]
-    ok = (c["signals"] == 2825 and c["models"] == 6 and c["predictions"] == 16950
+    c = get("/api/summary").json()["counts"]
+    ok = (c["signals"] == 2825 and c["models"] == 7 and c["predictions"] == 19775
           and c["stars"] >= 2256)
-    return ok, f"{c} (expected signals 2825, models 6, predictions 16950, stars >= 2256)"
+    return ok, f"{c} (expected signals 2825, models 7, predictions 19775, stars >= 2256)"
 
 
 def t_models():
-    models = get_json("/api/models")["models"]
-    first = models[0]
-    ok = (len(models) == 6 and first["name"] == "random_forest"
-          and first["feature_set"] == "all" and abs(first["test_pr_auc"] - 0.8507) < 0.001)
-    return ok, (f"{len(models)} models, best = {first['name']}/{first['feature_set']} "
-                f"test_pr_auc={first['test_pr_auc']:.4f} (expected 6, random_forest/all, 0.8507)")
+    models = get("/api/models").json()["models"]
+    rf = next((m for m in models if m["name"] == "random_forest" and m["feature_set"] == "all"), None)
+    cnn = next((m for m in models if m["name"] == "cnn_1d"), None)
+    ok = (len(models) == 7 and rf is not None and abs(rf["test_pr_auc"] - 0.8507) < 0.001
+          and cnn is not None)
+    cnn_pr = f"{cnn['test_pr_auc']:.4f}" if cnn else "missing"
+    return ok, (f"{len(models)} models, random_forest/all test_pr_auc="
+                f"{rf['test_pr_auc'] if rf else None}, cnn_1d test_pr_auc={cnn_pr} "
+                "(expected 7 models, random forest 0.8507, cnn_1d present)")
 
 
 def t_candidates():
-    r = get_json("/api/signals?kind=candidate&limit=5")
+    r = get("/api/signals?kind=candidate&limit=5").json()
     tics = [s["tic_id"] for s in r["signals"]]
     ok = r["total"] == 466 and tics == EXPECTED_TOP5
     return ok, f"total={r['total']}, top5={tics} (expected 466 and {EXPECTED_TOP5})"
 
 
 def t_paging():
-    r = get_json("/api/signals?kind=candidate&limit=2&offset=1")
+    r = get("/api/signals?kind=candidate&limit=2&offset=1").json()
     tics = [s["tic_id"] for s in r["signals"]]
     return tics == EXPECTED_TOP5[1:3], f"{tics} (expected {EXPECTED_TOP5[1:3]})"
 
 
 def t_test_split():
-    planets = get_json("/api/signals?kind=labeled&label=1&split=test")["total"]
-    false_pos = get_json("/api/signals?kind=labeled&label=0&split=test")["total"]
+    planets = get("/api/signals?kind=labeled&label=1&split=test").json()["total"]
+    false_pos = get("/api/signals?kind=labeled&label=0&split=test").json()["total"]
     return (planets, false_pos) == (257, 216), f"planets={planets}, false positives={false_pos} (expected 257 and 216)"
 
 
 def t_lightcurve():
-    j = get_json(f"/api/signals/{LIGHTCURVE_ID}/lightcurve")
+    j = get(f"/api/signals/{LIGHTCURVE_ID}/lightcurve").json()
     n_glob, n_loc = len(j["global_view"]), len(j["local_view"])
     n_raw, n_tr = len(j["raw"]["time"]), len(j["transit_times"])
     ok = (n_glob == 2001 and n_loc == 201 and 0 < n_raw <= 4000
@@ -80,8 +76,8 @@ def t_lightcurve():
 
 
 def t_compare():
-    models = get_json("/api/compare")["models"]
-    ok = len(models) == 6 and all("roc" in m and "pr" in m for m in models)
+    models = get("/api/compare").json()["models"]
+    ok = len(models) == 7 and all("roc" in m and "pr" in m for m in models)
     return ok, f"{len(models)} models, all with ROC and PR curves: {all('roc' in m and 'pr' in m for m in models)}"
 
 

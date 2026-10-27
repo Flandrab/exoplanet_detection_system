@@ -9,8 +9,10 @@ MODEL_NAMES = {
     "logistic_regression": "Logistic regression",
     "random_forest": "Random forest",
     "gradient_boosting": "Gradient boosting",
+    "cnn_1d": "1D CNN",
 }
-FEATURE_NAMES = {"all": "all features", "no_period": "without period"}
+FEATURE_NAMES = {"all": "all features", "no_period": "without period",
+                 "views": "light-curve views"}
 
 
 class ApiError(Exception):

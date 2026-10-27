@@ -49,7 +49,7 @@ show_chart(fig, key="ablation_chart")
 st.subheader("ROC and precision-recall curves")
 all_labels = [m["label"] for m in models]
 chosen = st.multiselect("Models to plot", all_labels,
-                        default=[m["label"] for m in models if m["feature_set"] == "all"])
+                        default=[m["label"] for m in models if m["feature_set"] in ("all", "views")])
 roc, pr = go.Figure(), go.Figure()
 for m in models:
     if m["label"] in chosen and "roc" in m:
@@ -82,5 +82,6 @@ fig = go.Figure(go.Heatmap(
 fig.update_yaxes(autorange="reversed")
 fig.update_layout(height=380, margin=dict(l=0, r=0, t=10, b=0))
 show_chart(fig, key="confusion_chart")
-st.caption("Cross-validation and test results agree closely, and removing the period "
-           "features lowers every model a little without changing the ranking of the models.")
+st.caption("The 1D CNN reads only the folded light-curve views (no period or other catalog "
+           "numbers), so it is not part of the period ablation above. Its test probabilities "
+           "are the average of five networks trained on different folds of the training stars.")
