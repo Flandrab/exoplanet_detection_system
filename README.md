@@ -157,6 +157,11 @@ the API returns what is expected:
 ```
 python tests/check_api.py
 ```
+The unit tests of the processing and evaluation code do not need the API or the database:
+
+```
+python -m pytest -q tests
+```
 
 ## Pages of the app
 
